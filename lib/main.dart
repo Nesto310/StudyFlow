@@ -2,18 +2,26 @@ import 'package:flutter/material.dart';
 import 'routes/app_routes.dart';
 
 void main() {
-  runApp(const MyApp());[cite: 4]
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const StudyFlowApp());
 }
 
-class MyApp extends StatelessWidget {[cite: 1, 4]
-  const MyApp({super.key});
+class StudyFlowApp extends StatelessWidget {
+  const StudyFlowApp({super.key});
 
   @override
-  Widget build(BuildContext context) {[cite: 1]
-    return MaterialApp([cite: 4]
-      title: 'Studyflow',
-      theme: ThemeData(primarySwatch: Colors.blue),[cite: 4]
-      initialRoute: AppRoutes.home,[cite: 4]
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'StudyFlow',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+      ),
+      initialRoute: AppRoutes.home,
       routes: AppRoutes.getRoutes(),
     );
   }

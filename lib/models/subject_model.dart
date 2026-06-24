@@ -1,22 +1,27 @@
 class SubjectModel {
-  String? id;
-  String nome;
+  final String id;
+  final String name;
+  final String teacher;
 
   SubjectModel({
-    this.id,
-    required this.nome,
+    required this.id,
+    required this.name,
+    required this.teacher,
   });
 
   Map<String, dynamic> toMap() {
     return {
-      'nome': nome,
+      'id': id,
+      'name': name,
+      'teacher': teacher,
     };
   }
 
-  factory SubjectModel.fromMap(String id, Map<String, dynamic> map) {
+  factory SubjectModel.fromMap(Map<String, dynamic> map) {
     return SubjectModel(
-      id: id,
-      nome: map['nome'],
+      id: map['id'],
+      name: map['name'],
+      teacher: map['teacher'],
     );
   }
 }
