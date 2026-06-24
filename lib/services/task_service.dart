@@ -3,31 +3,41 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task_model.dart';
 
 class TaskService {
-  static const String _storageKey = 'studyflow_tasks';
+  static const String _key = 'backend_simulado_tasks';
 
-  // Simula o Método GET: Busca todas as tarefas salvas
   Future<List<TaskModel>> getTasks() async {
-    final prefs = await SharedPreferences.getInstance();[cite: 3, 4]
-    final String? tasksJson = prefs.getString(_storageKey);[cite: 3]
-    
+    final prefs = await SharedPreferences.getInstance();
+    final String? tasksJson = prefs.getString(_key);
+
     if (tasksJson == null) return [];
-    
+
     final List<dynamic> decodedList = jsonDecode(tasksJson);
     return decodedList.map((item) => TaskModel.fromMap(item)).toList();
   }
 
-  // Simula o Método POST: Adiciona/Salva uma nova tarefa
-  Future<void> saveTask(TaskModel newTask) async {
-    final prefs = await SharedPreferences.getInstance();[cite: 3, 4]
-    final List<TaskModel> currentTasks = await getTasks();
-    
-    // Adiciona a nova tarefa na lista existente
-    currentTasks.add(newTask);
-    
-    // Converte a lista atualizada para JSON e salva
-    final String encodedData = jsonEncode(
-      currentTasks.map((task) => task.toMap()).toList(),
-    );
-    await prefs.setString(_storageKey, encodedData);[cite: 3]
+  Future<void> postTask(TaskModel task) async {
+    final prefs = await SharedPreferences.getInstance();
+    final tasks = await getTasks();
+    tasks.add(task);
+
+    await prefs.setString(
+        _key, jsonEncode(tasks.map((e) => e.toMap()).toList()));
+  }
+
+  Future<void> toggleTaskStatus(String id, bool status) async {
+    final prefs = await SharedPreferences.getInstance();
+    final tasks = await getTasks();
+    final index = tasks.indexWhere((element) => element.id == id);
+
+    if (index != -1) {
+      tasks[index] = TaskModel(
+        id: tasks[index].id,
+        title: tasks[index].title,
+        description: tasks[index].description,
+        isCompleted: status,
+      );
+      await prefs.setString(
+          _key, jsonEncode(tasks.map((e) => e.toMap()).toList()));
+    }
   }
 }

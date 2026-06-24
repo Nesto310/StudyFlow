@@ -11,7 +11,7 @@ class TaskModel {
     this.isCompleted = false,
   });
 
-  // Converte o objeto para um mapa (essencial para persistência/POST)
+  // Transforma o objeto em Map (Simula a preparação dos dados para o método POST)
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -21,7 +21,7 @@ class TaskModel {
     };
   }
 
-  // Cria um objeto a partir de um mapa (essencial para leitura/GET)
+  // Reconstrói o objeto a partir de um Map (Simula o recebimento de dados via método GET)
   factory TaskModel.fromMap(Map<String, dynamic> map) {
     return TaskModel(
       id: map['id'],
