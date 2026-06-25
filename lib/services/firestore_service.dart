@@ -1,5 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class FirestoreService {
-  final FirebaseFirestore db = FirebaseFirestore.instance;
+  const FirestoreService();
+
+  String get status {
+    return 'Firestore planejado para uma proxima etapa. '
+        'A entrega atual usa SharedPreferences como persistencia local.';
+  }
 }
