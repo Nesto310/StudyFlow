@@ -1,59 +1,43 @@
 class TaskModel {
   final String id;
   final String title;
+  final String subject;
   final String description;
-  final String subjectId;
+  final int estimatedMinutes;
   final DateTime dueDate;
   final bool isCompleted;
+  String? aiTip;
 
-  const TaskModel({
+  TaskModel({
     required this.id,
     required this.title,
-    required this.description,
-    required this.subjectId,
+    required this.subject,
+    this.description = '',
+    required this.estimatedMinutes,
     required this.dueDate,
     this.isCompleted = false,
+    this.aiTip,
   });
 
   TaskModel copyWith({
+    String? id,
     String? title,
+    String? subject,
     String? description,
-    String? subjectId,
+    int? estimatedMinutes,
     DateTime? dueDate,
     bool? isCompleted,
+    String? aiTip,
   }) {
     return TaskModel(
-      id: id,
+      id: id ?? this.id,
       title: title ?? this.title,
+      subject: subject ?? this.subject,
       description: description ?? this.description,
-      subjectId: subjectId ?? this.subjectId,
+      estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
-    );
-  }
-
-  // POST: prepara os dados do formulario para persistencia local.
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'subjectId': subjectId,
-      'dueDate': dueDate.toIso8601String(),
-      'isCompleted': isCompleted,
-    };
-  }
-
-  // GET: reconstroi o objeto a partir dos dados persistidos.
-  factory TaskModel.fromMap(Map<String, dynamic> map) {
-    return TaskModel(
-      id: map['id'] as String,
-      title: map['title'] as String,
-      description: map['description'] as String,
-      subjectId: (map['subjectId'] as String?) ?? '',
-      dueDate: DateTime.tryParse(map['dueDate'] as String? ?? '') ??
-          DateTime.now(),
-      isCompleted: map['isCompleted'] == true || map['isCompleted'] == 1,
+      aiTip: aiTip ?? this.aiTip,
     );
   }
 }

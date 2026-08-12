@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'routes/app_routes.dart';
+import 'config/app_theme.dart';
+import 'services/theme_controller.dart';
+import 'screens/main_navigation_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,19 +13,18 @@ class StudyFlowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'StudyFlow',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      initialRoute: AppRoutes.home,
-      routes: AppRoutes.getRoutes(),
-      onGenerateRoute: AppRoutes.onGenerateRoute,
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeModeNotifier,
+      builder: (context, currentMode, child) {
+        return MaterialApp(
+          title: 'StudyFlow',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: currentMode,
+          home: const MainNavigationScreen(),
+        );
+      },
     );
   }
 }
