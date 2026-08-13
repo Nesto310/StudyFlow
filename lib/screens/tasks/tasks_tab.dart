@@ -70,10 +70,7 @@ class _TasksTabState extends State<TasksTab> {
               ],
             ),
             const Divider(height: 24),
-            Text(
-              tip,
-              style: const TextStyle(fontSize: 15, height: 1.4),
-            ),
+            Text(tip, style: const TextStyle(fontSize: 15, height: 1.4)),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -114,38 +111,43 @@ class _TasksTabState extends State<TasksTab> {
           children: [
             Text(
               'Nova Tarefa',
-              style: Theme.of(ctx)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                ctx,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: titleController,
               decoration: const InputDecoration(
-                  labelText: 'Título da Tarefa', border: OutlineInputBorder()),
+                labelText: 'Título da Tarefa',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: subjectController,
               decoration: const InputDecoration(
-                  labelText: 'Matéria / Assunto', border: OutlineInputBorder()),
+                labelText: 'Matéria / Assunto',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: descController,
               maxLines: 2,
               decoration: const InputDecoration(
-                  labelText: 'Descrição detalhada',
-                  border: OutlineInputBorder()),
+                labelText: 'Descrição detalhada',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: durationController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                  labelText: 'Tempo Estimado (min)',
-                  border: OutlineInputBorder()),
+                labelText: 'Tempo Estimado (min)',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -171,7 +173,7 @@ class _TasksTabState extends State<TasksTab> {
                 },
                 child: const Text('Adicionar Tarefa'),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -181,9 +183,7 @@ class _TasksTabState extends State<TasksTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tarefas e Estudos'),
-      ),
+      appBar: AppBar(title: const Text('Tarefas e Estudos')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddTaskDialog,
         icon: const Icon(Icons.add),
@@ -210,9 +210,9 @@ class _TasksTabState extends State<TasksTab> {
                           children: [
                             Chip(
                               label: Text(task.subject),
-                              backgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primaryContainer,
                             ),
                             Text(
                               '${task.estimatedMinutes} min',
@@ -224,16 +224,20 @@ class _TasksTabState extends State<TasksTab> {
                         Text(
                           task.title,
                           style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         if (task.description.isNotEmpty) ...[
                           const SizedBox(height: 4),
-                          Text(task.description,
-                              style: TextStyle(color: Colors.grey[600])),
+                          Text(
+                            task.description,
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
                         ],
                         const SizedBox(height: 12),
                         const Divider(),
-                        // Opção DICA IA Logo Abaixo da Tarefa
+                        // Opção DICA IA logo abaixo da tarefa
                         Row(
                           children: [
                             OutlinedButton.icon(
@@ -244,13 +248,17 @@ class _TasksTabState extends State<TasksTab> {
                                       width: 16,
                                       height: 16,
                                       child: CircularProgressIndicator(
-                                          strokeWidth: 2),
+                                        strokeWidth: 2,
+                                      ),
                                     )
-                                  : const Icon(Icons.auto_awesome,
-                                      size: 18, color: Colors.amber),
-                              label: Text(task.aiTip != null
-                                  ? 'Ver Dica IA'
-                                  : 'Dica IA'),
+                                  : const Icon(
+                                      Icons.auto_awesome,
+                                      size: 18,
+                                      color: Colors.amber,
+                                    ),
+                              label: Text(
+                                task.aiTip != null ? 'Ver Dica IA' : 'Dica IA',
+                              ),
                             ),
                             const Spacer(),
                             IconButton(
@@ -263,10 +271,11 @@ class _TasksTabState extends State<TasksTab> {
                               onPressed: () {
                                 setState(() {
                                   _tasks[index] = task.copyWith(
-                                      isCompleted: !task.isCompleted);
+                                    isCompleted: !task.isCompleted,
+                                  );
                                 });
                               },
-                            )
+                            ),
                           ],
                         ),
                       ],

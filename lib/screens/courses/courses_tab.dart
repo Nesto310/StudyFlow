@@ -31,9 +31,7 @@ class _CoursesTabState extends State<CoursesTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Meus Cursos'),
-      ),
+      appBar: AppBar(title: const Text('Meus Cursos')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {},
         icon: const Icon(Icons.add),
@@ -61,16 +59,22 @@ class _CoursesTabState extends State<CoursesTab> {
                       Text(
                         course.name,
                         style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Chip(
-                          label: Text(course.platform,
-                              style: const TextStyle(fontSize: 12))),
+                        label: Text(
+                          course.platform,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                      'Meta: ${course.weeklyHoursGoal} horas semanais reservadas'),
+                    'Meta: ${course.weeklyHoursGoal} horas semanais reservadas',
+                  ),
                   const SizedBox(height: 12),
                   LinearProgressIndicator(value: progress),
                   const SizedBox(height: 6),

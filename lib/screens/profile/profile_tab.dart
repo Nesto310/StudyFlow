@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../services/ai_service.dart';
 import '../../services/theme_controller.dart';
 
 class ProfileTab extends StatelessWidget {
@@ -9,7 +8,7 @@ class ProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil & Configuracoes')),
+      appBar: AppBar(title: const Text('Perfil & Configurações')),
       body: ValueListenableBuilder<ThemeMode>(
         valueListenable: ThemeController.themeModeNotifier,
         builder: (context, themeMode, _) {
@@ -33,7 +32,7 @@ class ProfileTab extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               const Text(
-                'Aparencia',
+                'Aparência',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               Card(
@@ -49,18 +48,14 @@ class ProfileTab extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Integracoes',
+                'Integrações',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              Card(
+              const Card(
                 child: ListTile(
-                  leading: const Icon(Icons.key),
-                  title: const Text('Status da API de IA'),
-                  subtitle: Text(
-                    AiService.hasConfiguredApiKey
-                        ? 'Chave configurada via ambiente'
-                        : 'Modo demonstracao com fallback local',
-                  ),
+                  leading: Icon(Icons.key),
+                  title: Text('Status da IA'),
+                  subtitle: Text('IA externa: integração futura via backend'),
                 ),
               ),
             ],
