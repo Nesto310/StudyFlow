@@ -11,7 +11,7 @@ class SchedulerService {
     'Quinta-feira',
     'Sexta-feira',
     'Sábado',
-    'Domingo'
+    'Domingo',
   ];
 
   static List<ScheduleBlock> generateOptimalSchedule({

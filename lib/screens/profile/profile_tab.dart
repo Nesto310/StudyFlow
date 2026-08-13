@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+
 import '../../services/theme_controller.dart';
-import '../../services/ai_service.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -8,9 +8,7 @@ class ProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Perfil & Configurações'),
-      ),
+      appBar: AppBar(title: const Text('Perfil & Configurações')),
       body: ValueListenableBuilder<ThemeMode>(
         valueListenable: ThemeController.themeModeNotifier,
         builder: (context, themeMode, _) {
@@ -33,27 +31,31 @@ class ProfileTab extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text('Aparência', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Aparência',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               Card(
                 child: SwitchListTile(
                   secondary: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
                   title: const Text('Modo Escuro'),
-                  subtitle: Text(isDark ? 'Tema Escuro ativado' : 'Tema Claro ativado'),
+                  subtitle: Text(
+                    isDark ? 'Tema Escuro ativado' : 'Tema Claro ativado',
+                  ),
                   value: isDark,
                   onChanged: (val) => ThemeController.toggleTheme(val),
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Integrações', style: TextStyle(fontWeight: FontWeight.bold)),
-              Card(
+              const Text(
+                'Integrações',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Card(
                 child: ListTile(
-                  leading: const Icon(Icons.key),
-                  title: const Text('Status da API de IA'),
-                  subtitle: Text(
-                    AiService.apiKey == 'SUA_API_KEY_AQUI'
-                        ? 'Chave Padrão (Modo Demonstração)'
-                        : 'Chave Customizada Configurada',
-                  ),
+                  leading: Icon(Icons.key),
+                  title: Text('Status da IA'),
+                  subtitle: Text('IA externa: integração futura via backend'),
                 ),
               ),
             ],
