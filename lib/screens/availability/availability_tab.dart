@@ -12,15 +12,39 @@ class AvailabilityTab extends StatefulWidget {
 
 class _AvailabilityTabState extends State<AvailabilityTab> {
   final List<TimeSlot> _slots = [
-    TimeSlot(id: '1', dayOfWeek: 1, startHour: '14:00', endHour: '16:00', durationMinutes: 120, repeatNextWeek: true),
-    TimeSlot(id: '2', dayOfWeek: 3, startHour: '19:00', endHour: '21:00', durationMinutes: 120, repeatNextWeek: true),
-    TimeSlot(id: '3', dayOfWeek: 5, startHour: '10:00', endHour: '12:00', durationMinutes: 120, repeatNextWeek: false),
+    TimeSlot(
+        id: '1',
+        dayOfWeek: 1,
+        startHour: '14:00',
+        endHour: '16:00',
+        durationMinutes: 120,
+        repeatNextWeek: true),
+    TimeSlot(
+        id: '2',
+        dayOfWeek: 3,
+        startHour: '19:00',
+        endHour: '21:00',
+        durationMinutes: 120,
+        repeatNextWeek: true),
+    TimeSlot(
+        id: '3',
+        dayOfWeek: 5,
+        startHour: '10:00',
+        endHour: '12:00',
+        durationMinutes: 120,
+        repeatNextWeek: false),
   ];
 
   List<ScheduleBlock> _generatedSchedule = [];
 
   final List<String> _days = [
-    'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'
+    'Segunda',
+    'Terça',
+    'Quarta',
+    'Quinta',
+    'Sexta',
+    'Sábado',
+    'Domingo'
   ];
 
   void _runScheduler() {
@@ -52,7 +76,9 @@ class _AvailabilityTabState extends State<AvailabilityTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Card(
-              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               child: const Padding(
                 padding: EdgeInsets.all(12.0),
                 child: Row(
@@ -70,13 +96,18 @@ class _AvailabilityTabState extends State<AvailabilityTab> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('Slots Configurados:', style: Theme.of(context).textTheme.titleMedium),
+            Text('Slots Configurados:',
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             ..._slots.map((slot) => Card(
                   child: ListTile(
-                    leading: CircleAvatar(child: Text(_days[slot.dayOfWeek - 1].substring(0, 3))),
-                    title: Text('${_days[slot.dayOfWeek - 1]}: ${slot.startHour} às ${slot.endHour}'),
-                    subtitle: Text(slot.repeatNextWeek ? '🔁 Replicar semanalmente' : '🗓️ Apenas nesta semana'),
+                    leading: CircleAvatar(
+                        child: Text(_days[slot.dayOfWeek - 1].substring(0, 3))),
+                    title: Text(
+                        '${_days[slot.dayOfWeek - 1]}: ${slot.startHour} às ${slot.endHour}'),
+                    subtitle: Text(slot.repeatNextWeek
+                        ? '🔁 Replicar semanalmente'
+                        : '🗓️ Apenas nesta semana'),
                     trailing: Switch(
                       value: slot.repeatNextWeek,
                       onChanged: (val) {
@@ -98,14 +129,18 @@ class _AvailabilityTabState extends State<AvailabilityTab> {
             const SizedBox(height: 20),
             if (_generatedSchedule.isNotEmpty) ...[
               const Divider(),
-              Text('Cronograma Gerado pelo Algoritmo:', style: Theme.of(context).textTheme.titleMedium),
+              Text('Cronograma Gerado pelo Algoritmo:',
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               ..._generatedSchedule.map((b) => Card(
-                    color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer.withValues(alpha: 0.3),
                     child: ListTile(
                       leading: const Icon(Icons.schedule),
                       title: Text(b.itemTitle),
-                      subtitle: Text('${b.dayName} (${b.timeRange}) • ${b.category}'),
+                      subtitle:
+                          Text('${b.dayName} (${b.timeRange}) • ${b.category}'),
                     ),
                   )),
             ],

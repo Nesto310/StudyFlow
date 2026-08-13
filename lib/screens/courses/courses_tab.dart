@@ -44,7 +44,9 @@ class _CoursesTabState extends State<CoursesTab> {
         itemCount: _courses.length,
         itemBuilder: (context, index) {
           final course = _courses[index];
-          final progress = course.totalHours > 0 ? course.completedHours / course.totalHours : 0.0;
+          final progress = course.totalHours > 0
+              ? course.completedHours / course.totalHours
+              : 0.0;
 
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
@@ -58,13 +60,17 @@ class _CoursesTabState extends State<CoursesTab> {
                     children: [
                       Text(
                         course.name,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
                       ),
-                      Chip(label: Text(course.platform, style: const TextStyle(fontSize: 12))),
+                      Chip(
+                          label: Text(course.platform,
+                              style: const TextStyle(fontSize: 12))),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text('Meta: ${course.weeklyHoursGoal} horas semanais reservadas'),
+                  Text(
+                      'Meta: ${course.weeklyHoursGoal} horas semanais reservadas'),
                   const SizedBox(height: 12),
                   LinearProgressIndicator(value: progress),
                   const SizedBox(height: 6),

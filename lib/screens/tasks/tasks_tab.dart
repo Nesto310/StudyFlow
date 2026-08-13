@@ -29,7 +29,7 @@ class _TasksTabState extends State<TasksTab> {
     ),
   ];
 
-  Map<String, bool> _loadingAi = {};
+  final Map<String, bool> _loadingAi = {};
 
   void _getAiTip(TaskModel task) async {
     setState(() => _loadingAi[task.id] = true);
@@ -114,29 +114,38 @@ class _TasksTabState extends State<TasksTab> {
           children: [
             Text(
               'Nova Tarefa',
-              style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(ctx)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(labelText: 'Título da Tarefa', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                  labelText: 'Título da Tarefa', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: subjectController,
-              decoration: const InputDecoration(labelText: 'Matéria / Assunto', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                  labelText: 'Matéria / Assunto', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: descController,
               maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Descrição detalhada', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                  labelText: 'Descrição detalhada',
+                  border: OutlineInputBorder()),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: durationController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Tempo Estimado (min)', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                  labelText: 'Tempo Estimado (min)',
+                  border: OutlineInputBorder()),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -151,7 +160,8 @@ class _TasksTabState extends State<TasksTab> {
                           title: titleController.text,
                           subject: subjectController.text,
                           description: descController.text,
-                          estimatedMinutes: int.tryParse(durationController.text) ?? 60,
+                          estimatedMinutes:
+                              int.tryParse(durationController.text) ?? 60,
                           dueDate: DateTime.now().add(const Duration(days: 3)),
                         ),
                       );
@@ -200,7 +210,9 @@ class _TasksTabState extends State<TasksTab> {
                           children: [
                             Chip(
                               label: Text(task.subject),
-                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
                             ),
                             Text(
                               '${task.estimatedMinutes} min',
@@ -211,11 +223,13 @@ class _TasksTabState extends State<TasksTab> {
                         const SizedBox(height: 8),
                         Text(
                           task.title,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         if (task.description.isNotEmpty) ...[
                           const SizedBox(height: 4),
-                          Text(task.description, style: TextStyle(color: Colors.grey[600])),
+                          Text(task.description,
+                              style: TextStyle(color: Colors.grey[600])),
                         ],
                         const SizedBox(height: 12),
                         const Divider(),
@@ -223,25 +237,33 @@ class _TasksTabState extends State<TasksTab> {
                         Row(
                           children: [
                             OutlinedButton.icon(
-                              onPressed: isLoading ? null : () => _getAiTip(task),
+                              onPressed:
+                                  isLoading ? null : () => _getAiTip(task),
                               icon: isLoading
                                   ? const SizedBox(
                                       width: 16,
                                       height: 16,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
                                     )
-                                  : const Icon(Icons.auto_awesome, size: 18, color: Colors.amber),
-                              label: Text(task.aiTip != null ? 'Ver Dica IA' : 'Dica IA'),
+                                  : const Icon(Icons.auto_awesome,
+                                      size: 18, color: Colors.amber),
+                              label: Text(task.aiTip != null
+                                  ? 'Ver Dica IA'
+                                  : 'Dica IA'),
                             ),
                             const Spacer(),
                             IconButton(
                               icon: Icon(
-                                task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                                task.isCompleted
+                                    ? Icons.check_circle
+                                    : Icons.radio_button_unchecked,
                                 color: task.isCompleted ? Colors.green : null,
                               ),
                               onPressed: () {
                                 setState(() {
-                                  _tasks[index] = task.copyWith(isCompleted: !task.isCompleted);
+                                  _tasks[index] = task.copyWith(
+                                      isCompleted: !task.isCompleted);
                                 });
                               },
                             )
