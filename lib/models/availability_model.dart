@@ -14,4 +14,22 @@ class TimeSlot {
     required this.durationMinutes,
     this.repeatNextWeek = true,
   });
+
+  TimeSlot copyWith({
+    String? id,
+    int? dayOfWeek,
+    String? startHour,
+    String? endHour,
+    int? durationMinutes,
+    bool? repeatNextWeek,
+  }) {
+    return TimeSlot(
+      id: id ?? this.id,
+      dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+      startHour: startHour ?? this.startHour,
+      endHour: endHour ?? this.endHour,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
+      repeatNextWeek: repeatNextWeek ?? this.repeatNextWeek,
+    );
+  }
 }

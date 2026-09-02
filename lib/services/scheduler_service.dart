@@ -1,7 +1,8 @@
-import '../models/task_model.dart';
-import '../models/course_model.dart';
 import '../models/availability_model.dart';
+import '../models/course_model.dart';
 import '../models/schedule_model.dart';
+import '../models/subject_model.dart';
+import '../models/task_model.dart';
 
 class SchedulerService {
   static final List<String> _weekDays = [
@@ -18,6 +19,7 @@ class SchedulerService {
     required List<TimeSlot> slots,
     required List<TaskModel> tasks,
     required List<CourseModel> courses,
+    required List<SubjectModel> subjects,
   }) {
     List<ScheduleBlock> schedule = [];
 
@@ -39,11 +41,12 @@ class SchedulerService {
       // Alterna ou prioriza tarefas urgentes sobre cursos
       if (taskIndex < pendingTasks.length) {
         final task = pendingTasks[taskIndex];
+        final subjectName = _subjectNameFor(task.subjectId, subjects);
         schedule.add(
           ScheduleBlock(
             dayName: dayName,
             timeRange: timeRange,
-            itemTitle: '${task.subject}: ${task.title}',
+            itemTitle: '$subjectName: ${task.title}',
             category: 'Tarefa (Urgente)',
           ),
         );
@@ -72,5 +75,15 @@ class SchedulerService {
     }
 
     return schedule;
+  }
+
+  static String _subjectNameFor(String subjectId, List<SubjectModel> subjects) {
+    for (final subject in subjects) {
+      if (subject.id == subjectId) {
+        return subject.name;
+      }
+    }
+
+    return 'Disciplina';
   }
 }

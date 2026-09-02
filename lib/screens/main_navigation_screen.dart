@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
-import 'tasks/tasks_tab.dart';
+import '../state/app_state.dart';
 import 'availability/availability_tab.dart';
 import 'courses/courses_tab.dart';
 import 'profile/profile_tab.dart';
+import 'subjects/subjects_tab.dart';
+import 'tasks/tasks_tab.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final AppState appState;
+
+  const MainNavigationScreen({
+    super.key,
+    required this.appState,
+  });
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -14,19 +21,20 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _tabs = const [
-    TasksTab(),
-    AvailabilityTab(),
-    CoursesTab(),
-    ProfileTab(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final tabs = [
+      TasksTab(appState: widget.appState),
+      SubjectsTab(appState: widget.appState),
+      AvailabilityTab(appState: widget.appState),
+      const CoursesTab(),
+      const ProfileTab(),
+    ];
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _tabs,
+        children: tabs,
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
@@ -36,6 +44,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             icon: Icon(Icons.check_circle_outline),
             selectedIcon: Icon(Icons.check_circle),
             label: 'Tarefas',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book),
+            label: 'Disciplinas',
           ),
           NavigationDestination(
             icon: Icon(Icons.calendar_today_outlined),
