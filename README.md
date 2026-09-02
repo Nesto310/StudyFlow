@@ -4,7 +4,7 @@
 
 StudyFlow é um aplicativo Flutter para universitários que conciliam trabalho e estudos. O objetivo é ajudar a organizar disciplinas, tarefas, tempo disponível, cronogramas de estudo e progresso acadêmico em uma experiência simples para o dia a dia.
 
-O projeto pretende evoluir para planejamento inteligente, replanejamento automático, recomendação de cursos e recursos de IA. A integração Gemini está planejada para uma fase futura através do backend. A Fase 2A adiciona a fundação da API e da persistência, mas ainda não há autenticação, CRUD, integração Flutter/API nem planner completo.
+O projeto pretende evoluir para planejamento inteligente, replanejamento automático, recomendação de cursos e recursos de IA. A integração Gemini está planejada para uma fase futura através do backend. A Fase 2B adiciona autenticação JWT e CRUD da API, mas ainda não há integração Flutter/API nem planner completo.
 
 ## Estado atual
 
@@ -19,6 +19,7 @@ O projeto pretende evoluir para planejamento inteligente, replanejamento automá
 - Experimento de dica de IA usando fallback local.
 - Backend FastAPI com modelos SQLAlchemy, migrations Alembic e PostgreSQL como banco alvo.
 - Health checks da aplicação e da conexão com o banco.
+- Registro/login com Argon2 e JWT Bearer, além de CRUD acadêmico isolado por usuário.
 
 Nesta fase, o Flutter ainda não consome a API. Seus dados acadêmicos continuam somente no `AppState` local.
 
@@ -33,6 +34,7 @@ Nesta fase, o Flutter ainda não consome a API. Seus dados acadêmicos continuam
 - SQLAlchemy 2.x e Alembic.
 - PostgreSQL com psycopg 3.
 - pytest e httpx para testes do backend.
+- PyJWT, pwdlib (Argon2), python-multipart e email-validator para autenticação/validação.
 
 ## Como executar
 
@@ -56,7 +58,7 @@ FastAPI
 PostgreSQL
 ```
 
-O backend e o aplicativo são executáveis separadamente na Fase 2A.
+O backend e o aplicativo são executáveis separadamente na Fase 2B; o Flutter continua no `AppState` local até a Fase 2C.
 
 ## Estrutura atual
 
