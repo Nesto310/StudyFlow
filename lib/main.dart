@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'config/app_theme.dart';
+import 'config/app_config.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/auth/auth_screen.dart';
 import 'services/api_client.dart';
@@ -14,10 +15,12 @@ void main() {
 }
 
 class StudyFlowApp extends StatefulWidget {
-  const StudyFlowApp({super.key, this.apiClient, this.tokenStorage});
+  const StudyFlowApp(
+      {super.key, this.apiClient, this.tokenStorage, this.demoMode});
 
   final ApiClient? apiClient;
   final TokenStorage? tokenStorage;
+  final bool? demoMode;
 
   @override
   State<StudyFlowApp> createState() => _StudyFlowAppState();
@@ -36,6 +39,7 @@ class _StudyFlowAppState extends State<StudyFlowApp> {
     _auth = AuthState(
         apiClient: _api,
         tokenStorage: widget.tokenStorage ?? SecureTokenStorage(),
+        demoMode: widget.demoMode ?? demoModeForBuild(),
         appState: _appState);
     _auth.initialize();
   }

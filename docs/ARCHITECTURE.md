@@ -1,6 +1,6 @@
 # Arquitetura do StudyFlow
 
-Este documento registra o estado implementado na Fase 2C. Funcionalidades futuras são apresentadas somente como alvo.
+Este documento registra o estado implementado na Fase 3. Funcionalidades futuras são apresentadas somente como alvo.
 
 ## Estado atual
 
@@ -36,7 +36,7 @@ StudyFlowApp
 
 O `AppState` começa vazio e carrega disciplinas, tarefas e disponibilidade em paralelo. As listas são somente leitura e são substituídas juntas após um carregamento bem-sucedido. Criação, alteração e exclusão só mudam o snapshot depois da confirmação do servidor. UUIDs vêm do backend.
 
-O backend aprovado da Fase 2B mantém configuração por ambiente, sessões síncronas, modelos persistentes, migrations Alembic, health checks, registro, hashing Argon2, login OAuth2 Password, JWT Bearer, usuário atual e CRUD acadêmico. A integração não exige alteração de schema, migrations ou CORS. Planner e IA externa continuam fora do escopo.
+O backend mantém configuração por ambiente, sessões síncronas, modelos persistentes, migrations Alembic, health checks, registro, hashing Argon2, login OAuth2 Password, JWT Bearer, usuário atual e CRUD acadêmico. A Fase 3 adiciona o Planner como leitura/cálculo e uma sessão demo exclusiva de desenvolvimento, sem alteração de schema, migrations ou CORS. IA externa continua fora do escopo.
 
 ## Domínio persistente
 
@@ -90,7 +90,7 @@ Os mappers convertem snake_case para os models Flutter. `teacher: null` vira str
 - tema da aplicação;
 - autenticação, secure token storage e ciclo de sessão;
 - snapshot remoto de disciplinas, tarefas e disponibilidade;
-- Scheduler local sobre dados recebidos da API, sem mudança de algoritmo;
+- solicitação e preview do Planner calculado pelo backend;
 - cursos locais, separados do domínio acadêmico persistido;
 - fallback local para dicas de estudo.
 
@@ -102,6 +102,7 @@ Os mappers convertem snake_case para os models Flutter. `teacher: null` vira str
 - acesso ao banco por sessões SQLAlchemy;
 - autenticação JWT e senhas Argon2;
 - CRUD acadêmico com validações e isolamento por usuário.
+- Planner determinístico e sessão demo exclusivamente em desenvolvimento.
 
 ### PostgreSQL e Alembic
 
@@ -112,3 +113,36 @@ Os mappers convertem snake_case para os models Flutter. `teacher: null` vira str
 ## Segurança
 
 Arquivos `.env`, credenciais pessoais, tokens e chaves privadas não são versionados. A integração futura com serviços externos deverá ocorrer pelo backend; nenhuma chave deve ser armazenada no Flutter.
+
+## Planner V1
+
+`Flutter -> solicita/exibe plano; FastAPI -> executa algoritmo`. Uma única regra mantém consistência entre dispositivos, simplifica a evolução e prepara a base para replanning e StudyFlow Coach, sem implementá-los agora. O Scheduler local e seu model antigo foram removidos após substituir os usos.
+
+`POST /api/v1/planner/plan` exige JWT e busca tarefas por JOIN com disciplinas do `current_user`, além dos horários desse usuário. Não aceita `user_id`, IDs arbitrários, tarefas ou disponibilidade no corpo. É somente leitura, sem tabelas de plano, migrations, alterações automáticas ou histórico.
+
+- `start_at`: datetime com fuso, opcional, padrão agora UTC; pode ser fixado para testes.
+- `horizon_days`: inteiro 1..30, padrão 14; horizonte `[start_at, start_at + dias)`.
+- `timezone_offset_minutes`: inteiro -840..840, padrão 0. O Flutter sempre envia o offset local atual. Disponibilidade semanal é expandida nesse offset fixo e a resposta usa UTC; a UI converte para local. Não há timezone IANA/DST persistido na V1.
+- `repeat_next_week=false`: somente a primeira ocorrência futura do slot dentro do horizonte. A porção restante do slot de hoje conta como essa ocorrência. Ocorrências já encerradas são ignoradas.
+- `repeat_next_week=true`: repetição semanal enquanto dentro do horizonte.
+- Janelas são recortadas no início/fim do horizonte. Limites com segundos são arredondados para dentro, à resolução de um minuto. Sobreposições e horários adjacentes formam uma janela contínua, sem capacidade duplicada.
+- Apenas tarefas pendentes, ordenadas por `due_date`, `created_at` e UUID. Earliest Deadline First usa `estimated_minutes` integralmente, dividindo tarefas ou colocando várias tarefas na mesma janela.
+- `MAX_STUDY_BLOCK_MINUTES=90`; `BREAK_MINUTES=10` entre blocos da mesma janela contínua. Intervalos não viram blocos na resposta; se não restar um minuto útil, a janela termina.
+- Para prazos futuros, nenhum bloco termina depois de `due_date`. Minutos restantes resultam em `at_risk`; alocação completa resulta em `on_track`.
+- Prazo `<= start_at` resulta em `overdue`, mesmo se totalmente alocado. A tarefa vencida continua sendo planejada na primeira disponibilidade.
+- Blocos estão em ordem cronológica; resumos de tarefas em ordem de prazo. `total_available_minutes` é a capacidade bruta das janelas unidas (antes dos intervalos), e os minutos planejados contam somente estudo.
+- Sem tarefas: plano vazio válido. Sem disponibilidade: nenhum bloco e tarefas `at_risk`/`overdue`.
+
+`AppState` guarda apenas o último plano em memória. CRUD acadêmico bem-sucedido, recarga dos dados e saída invalidam o plano. Dicas locais não invalidam. A geração tem loading, deduplicação e erro com retry preservando o plano anterior. Além da geração da sessão, uma revisão do plano impede que respostas anteriores a uma mutação substituam o estado atual. Não há geração automática.
+
+## Modo demonstração temporário
+
+O app factory registra `/api/v1/dev/demo-session` somente quando `APP_ENV` é exatamente `development`. O padrão é `production` (fail-closed); outros ambientes recebem 404 e não incluem a rota no OpenAPI. A rota pública não recebe credenciais, cria/busca um usuário comum e emite JWT normal com headers `no-store`. Não existem roles, admin ou permissões adicionais.
+
+Email: `demo@studyflow.example.com`, domínio reservado compatível com `EmailStr`; `.local` não foi usado porque o validador atual o rejeita. O hash Argon2 deriva de uma senha aleatória interna nunca retornada. A conta é compartilhada por todas as sessões demo desse banco: alterações são visíveis entre desenvolvedores, portanto use apenas banco de desenvolvimento sem dados privados e rede restrita.
+
+O seed ocorre somente quando disciplinas, tarefas e horários estão todos vazios. Cria três disciplinas, tarefas de 90/60/120 minutos com prazos relativos de 2/4/6 dias e sete horários 19:00-21:00. A linha do usuário é bloqueada na transação e a unicidade do email trata criação concorrente; validação de concorrência real requer PostgreSQL. Dados existentes não são apagados, duplicados ou resetados.
+
+`DEMO_MODE` é centralizado em `app_config.dart`, temporariamente true por padrão em debug. Tanto a configuração quanto `ApiClient.startDemoSession` são protegidos por `kDebugMode`; override não habilita demo em release/profile. `AuthState` compartilha o caminho `setToken -> /users/me -> AppState.loadData` com o login real. JWT demo nunca é lido/escrito no secure storage; uma sessão real salva fica intacta. Logout volta para AuthScreen e desativa a entrada demo automática nesta execução. `DEMO_MODE=false` mantém login/registro/restauração seguros existentes.
+
+A remoção antes da versão final está registrada em [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md).

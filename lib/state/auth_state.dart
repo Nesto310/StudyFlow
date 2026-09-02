@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../config/app_config.dart';
 import '../models/user_model.dart';
 import '../services/api_client.dart';
 import '../services/token_storage.dart';
@@ -13,16 +14,23 @@ class AuthState extends ChangeNotifier {
   AuthState(
       {required ApiClient apiClient,
       required TokenStorage tokenStorage,
-      required AppState appState})
+      required AppState appState,
+      bool demoMode = false})
       : _api = apiClient,
         _storage = tokenStorage,
-        _app = appState {
+        _app = appState,
+        _demoMode = demoModeForBuild(requested: demoMode) {
     _api.onUnauthorized = () => logout(expired: true);
   }
 
   final ApiClient _api;
   final TokenStorage _storage;
   final AppState _app;
+  final bool _demoMode;
+  bool _demoStartupAllowed = true;
+  bool _initializingDemo = false;
+  bool _isDemoSession = false;
+  bool get isDemoSession => _isDemoSession;
   AuthStatus status = AuthStatus.initializing;
   UserModel? currentUser;
   String? error;
@@ -59,27 +67,31 @@ class AuthState extends ChangeNotifier {
     _app.clear();
     _notify();
     try {
-      final token = await _stored(_storage.readToken);
+      _initializingDemo = _demoMode && _demoStartupAllowed;
+      final token = _initializingDemo
+          ? await _api.startDemoSession()
+          : await _stored(_storage.readToken);
       if (!_isCurrent(generation)) return;
-      _api.setToken(token);
       if (token == null || token.isEmpty) {
         _api.setToken(null);
         status = AuthStatus.unauthenticated;
       } else {
-        final user = await _api.getCurrentUser();
-        if (!_isCurrent(generation)) return;
-        currentUser = user;
-        status = AuthStatus.authenticated;
-        unawaited(_app.loadData());
+        await _acceptToken(token, generation, demo: _initializingDemo);
       }
     } on ApiException catch (exception) {
-      if (_isCurrent(generation)) error = exception.message;
+      if (_isCurrent(generation)) {
+        _api.setToken(null);
+        error = _initializingDemo
+            ? 'Não foi possível iniciar a demonstração. Confira o backend de desenvolvimento e tente novamente.'
+            : exception.message;
+      }
     } catch (_) {
       if (_isCurrent(generation)) {
         error = 'Não foi possível acessar sua sessão salva. Tente novamente.';
       }
     } finally {
       if (_isCurrent(generation)) {
+        _initializingDemo = false;
         isBusy = false;
         _notify();
       }
@@ -91,6 +103,22 @@ class AuthState extends ChangeNotifier {
 
   Future<void> register(String email, String password) =>
       _authenticate(email, password, register: true);
+
+  Future<void> _acceptToken(String token, int generation,
+      {bool persist = false, bool demo = false}) async {
+    if (!_isCurrent(generation)) return;
+    _api.setToken(token);
+    final user = await _api.getCurrentUser();
+    if (!_isCurrent(generation)) return;
+    if (persist) {
+      await _stored(() => _storage.saveToken(token));
+      if (!_isCurrent(generation)) return;
+    }
+    currentUser = user;
+    _isDemoSession = demo;
+    status = AuthStatus.authenticated;
+    unawaited(_app.loadData());
+  }
 
   Future<void> _authenticate(String email, String password,
       {required bool register}) async {
@@ -106,15 +134,7 @@ class AuthState extends ChangeNotifier {
         if (!_isCurrent(generation)) return;
       }
       final token = await _api.login(email, password);
-      if (!_isCurrent(generation)) return;
-      _api.setToken(token);
-      final user = await _api.getCurrentUser();
-      if (!_isCurrent(generation)) return;
-      await _stored(() => _storage.saveToken(token));
-      if (!_isCurrent(generation)) return;
-      currentUser = user;
-      status = AuthStatus.authenticated;
-      unawaited(_app.loadData());
+      await _acceptToken(token, generation, persist: true);
     } on ApiException catch (exception) {
       if (_isCurrent(generation)) {
         _api.setToken(null);
@@ -140,6 +160,10 @@ class AuthState extends ChangeNotifier {
   Future<void> logout({bool expired = false}) async {
     if (_disposed) return;
     final generation = ++_generation;
+    final demo = _isDemoSession || _initializingDemo;
+    _demoStartupAllowed = false;
+    _initializingDemo = false;
+    _isDemoSession = false;
     _api.setToken(null);
     currentUser = null;
     status = AuthStatus.unauthenticated;
@@ -148,7 +172,8 @@ class AuthState extends ChangeNotifier {
     _app.clear();
     _notify();
     try {
-      await _stored(_storage.deleteToken);
+      // Demo tokens live only in memory; leave a saved real session untouched.
+      if (!demo) await _stored(_storage.deleteToken);
       if (_isCurrent(generation)) _pendingLogout = false;
     } catch (_) {
       if (_isCurrent(generation)) {

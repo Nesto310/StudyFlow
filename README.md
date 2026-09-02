@@ -4,7 +4,7 @@
 
 StudyFlow é um aplicativo Flutter para universitários que conciliam trabalho e estudos. O objetivo é ajudar a organizar disciplinas, tarefas, tempo disponível, cronogramas de estudo e progresso acadêmico em uma experiência simples para o dia a dia.
 
-O projeto pretende evoluir para planejamento inteligente, replanejamento automático, recomendação de cursos e recursos de IA. A Fase 2C integra o Flutter à API autenticada. Planner completo e Gemini continuam planejados para fases futuras; nenhuma credencial externa pertence ao aplicativo.
+O projeto pretende evoluir para replanejamento automático, recomendação de cursos e recursos de IA. A Fase 3 implementa o Planner V1 determinístico no backend e um modo demonstração temporário de desenvolvimento. Gemini continua planejado para uma fase futura via backend; nenhuma credencial externa pertence ao aplicativo.
 
 ## Estado atual
 
@@ -15,7 +15,8 @@ O projeto pretende evoluir para planejamento inteligente, replanejamento automá
 - Disciplinas acadêmicas carregadas e persistidas pela API.
 - Tarefas vinculadas a disciplinas por `subjectId`.
 - Disponibilidade criada e persistida pela API, com repetição semanal.
-- Scheduler inicial local usando disciplinas, tarefas e horários carregados da API.
+- Planner V1 no backend com preview na aba Horários.
+- Modo demonstração temporário em debug, com dados semeados pela API de desenvolvimento.
 - Cursos externos mantidos separados de disciplinas acadêmicas.
 - Experimento de dica de IA usando fallback local.
 - Backend FastAPI com modelos SQLAlchemy, migrations Alembic e PostgreSQL como banco alvo.
@@ -61,7 +62,17 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000
 
 ### Sessão e uso
 
-Crie uma conta com email e senha ou entre em uma existente. O registro faz login automaticamente. Depois, cadastre disciplinas, tarefas (com data e horário de entrega) e disponibilidade nas respectivas abas. O servidor gera os IDs e confirma cada alteração antes da atualização das listas.
+Em debug, o modo demonstração está temporariamente ativo por padrão. Configure `APP_ENV=development` no backend privado e execute o comando do emulador acima: o aplicativo obtém uma sessão demo, carrega dados e abre sem preencher login. A conta compartilhada é um usuário comum, sem privilégios, com senha aleatória interna desconhecida. Seus dados existentes não são resetados nem duplicados. Não exponha a API de desenvolvimento à internet.
+
+Para testar autenticação normal:
+
+```powershell
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000 --dart-define=DEMO_MODE=false
+```
+
+O JWT demo fica somente em memória e não substitui uma sessão real salva. **Sair** encerra o demo e mantém a tela de login nesta execução. Em release/profile, `kDebugMode` impede o bypass mesmo com `DEMO_MODE=true`. O backend só registra a rota demo em `APP_ENV=development`; sem configuração explícita, o ambiente padrão é `production` e a rota não existe. A remoção definitiva está registrada em [`docs/TECHNICAL_DEBT.md`](docs/TECHNICAL_DEBT.md).
+
+No modo normal, crie uma conta com email e senha ou entre em uma existente. O registro faz login automaticamente. Depois, cadastre disciplinas, tarefas (com data e horário de entrega) e disponibilidade nas respectivas abas. O servidor gera os IDs e confirma cada alteração antes da atualização das listas.
 
 O JWT é guardado por `SecureTokenStorage`, usando o armazenamento protegido da plataforma, nunca `SharedPreferences`. Senhas só participam do formulário e das requisições e não são persistidas. Ao abrir o app, o token salvo é validado em `/users/me`; falhas de conexão preservam a sessão salva e oferecem nova tentativa. Um 401 autenticado encerra a sessão; senha incorreta no login não é tratada como expiração. **Sair**, no Perfil, remove o token e esvazia todos os dados acadêmicos locais.
 
@@ -78,6 +89,16 @@ flutter test
 Os testes usam `MockClient` e `MemoryTokenStorage`, sem servidor ou plugin nativo. Windows requer Visual Studio com suporte C++/ATL; Android requer SDK e emulador/dispositivo configurados. Flutter Web e CORS não fazem parte desta fase.
 
 Na validação da Fase 2C, o APK debug também foi executado no Android Emulator com FastAPI e SQLite descartável: registro/login, criação dos dados, reabertura com sessão restaurada, conclusão de tarefa, atualização de disponibilidade e logout. Esse smoke test não substitui a validação contra PostgreSQL real nem a execução nativa em Windows.
+
+Na Fase 3, passaram 211 testes backend e 111 testes Flutter, além de `flutter analyze`. O smoke Android + FastAPI + SQLite confirmou entrada demo, seed sem duplicação, preview, criação de tarefa (270 -> 330 minutos planejados), conclusão e nova geração sem essa tarefa (270 minutos). O debug com `DEMO_MODE=false` abriu o login normal. Um APK release compilado com `--dart-define=DEMO_MODE=true` também foi instalado no emulador e abriu o login, sem bypass demo. Capturas foram conferidas; no emulador headless foi necessário cold boot com renderização SwiftShader. Migration e `alembic check` passaram no SQLite descartável. PostgreSQL real não foi executado, pois Docker/PostgreSQL não estavam disponíveis.
+
+## Planner V1
+
+Em **Horários**, use **Gerar plano de estudos**. O backend calcula os próximos 14 dias por Earliest Deadline First (prazo, criação, ID), usando apenas tarefas pendentes do usuário. A duração estimada é dividida em blocos de até 90 minutos, com 10 minutos entre blocos na mesma janela contínua. Uma janela pode receber várias tarefas.
+
+Tarefas futuras só recebem blocos antes do prazo: `on_track` indica alocação completa e `at_risk` indica minutos não alocados. Tarefas já vencidas são `overdue` e continuam sendo encaixadas. O preview mostra datas/horas locais, minutos e avisos de risco. Alterações acadêmicas invalidam o plano; falhas temporárias na geração preservam o anterior e permitem tentar novamente.
+
+A disponibilidade é local e o Flutter envia o offset atual em minutos. `repeat_next_week=false` usa somente a primeira ocorrência futura no horizonte (incluindo a parte restante de hoje); `true` repete semanalmente. O offset é fixo neste plano, sem regras de horário de verão. Não há persistência do plano, alterações automáticas nas tarefas, IA, cursos no algoritmo ou replanejamento. Detalhes em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Arquitetura nesta fase
 
@@ -101,10 +122,11 @@ lib/
   config/
     app_theme.dart
     api_config.dart
+    app_config.dart
   models/
     availability_model.dart
     course_model.dart
-    schedule_model.dart
+    study_plan_model.dart
     subject_model.dart
     task_model.dart
     user_model.dart
@@ -121,7 +143,6 @@ lib/
     ai_service.dart
     api_client.dart
     token_storage.dart
-    scheduler_service.dart
     theme_controller.dart
   state/
     app_state.dart

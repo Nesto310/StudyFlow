@@ -15,8 +15,8 @@ Finder filledButton(String label) => find.ancestor(
     );
 
 Future<void> openApp(WidgetTester tester, ApiFixture f) async {
-  await tester
-      .pumpWidget(StudyFlowApp(apiClient: f.api, tokenStorage: f.storage));
+  await tester.pumpWidget(
+      StudyFlowApp(apiClient: f.api, tokenStorage: f.storage, demoMode: false));
   await tester.pumpAndSettle();
 }
 

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:studyflow/services/api_client.dart';
-import 'package:studyflow/services/scheduler_service.dart';
 
 import '../support/api_fixture.dart';
 
@@ -193,14 +192,10 @@ void main() {
     expect(f.app.tasks.single.aiTip, isNull);
   });
 
-  test('Scheduler usa dados carregados da API sem mudar algoritmo', () async {
+  test('Planner é calculado pela API e salvo no estado', () async {
     await f.app.loadData();
-    final schedule = SchedulerService.generateOptimalSchedule(
-        tasks: f.app.tasks,
-        slots: f.app.availabilitySlots,
-        subjects: f.app.subjects,
-        courses: []);
-    expect(schedule.single.itemTitle, 'Disciplina a: Tarefa a');
-    expect(schedule.single.timeRange, '09:15 - 10:45');
+    await f.app.generateStudyPlan();
+    expect(f.app.studyPlan!.blocks.single.taskTitle, 'Revisar árvores AVL');
+    expect(f.requests.last.url.path, '/api/v1/planner/plan');
   });
 }
