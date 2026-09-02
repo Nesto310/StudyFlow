@@ -40,4 +40,14 @@ class TaskModel {
       aiTip: aiTip ?? this.aiTip,
     );
   }
+
+  factory TaskModel.fromJson(Map<String, dynamic> json) => TaskModel(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        subjectId: json['subject_id'] as String,
+        description: json['description'] as String? ?? '',
+        estimatedMinutes: json['estimated_minutes'] as int,
+        dueDate: DateTime.parse(json['due_date'] as String),
+        isCompleted: json['is_completed'] as bool,
+      );
 }

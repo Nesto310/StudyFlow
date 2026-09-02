@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../state/app_state.dart';
+import '../state/auth_state.dart';
 import 'availability/availability_tab.dart';
 import 'courses/courses_tab.dart';
 import 'profile/profile_tab.dart';
@@ -8,10 +9,12 @@ import 'tasks/tasks_tab.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final AppState appState;
+  final AuthState authState;
 
   const MainNavigationScreen({
     super.key,
     required this.appState,
+    required this.authState,
   });
 
   @override
@@ -28,7 +31,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       SubjectsTab(appState: widget.appState),
       AvailabilityTab(appState: widget.appState),
       const CoursesTab(),
-      const ProfileTab(),
+      ProfileTab(authState: widget.authState),
     ];
 
     return Scaffold(
