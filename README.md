@@ -4,24 +4,25 @@
 
 StudyFlow é um aplicativo Flutter para universitários que conciliam trabalho e estudos. O objetivo é ajudar a organizar disciplinas, tarefas, tempo disponível, cronogramas de estudo e progresso acadêmico em uma experiência simples para o dia a dia.
 
-O projeto pretende evoluir para planejamento inteligente, replanejamento automático, recomendação de cursos e recursos de IA. A integração Gemini está planejada para uma fase futura através do backend. Neste momento, ainda não há backend real, banco de dados, autenticação, integração persistente entre todas as áreas nem planner completo em produção.
+O projeto pretende evoluir para planejamento inteligente, replanejamento automático, recomendação de cursos e recursos de IA. A integração Gemini está planejada para uma fase futura através do backend. Neste momento, ainda não há backend real, banco de dados, autenticação, persistência dos dados acadêmicos nem planner completo em produção.
 
 ## Estado atual
 
 - Aplicativo Flutter com Material 3.
 - Tema claro/escuro controlado localmente.
-- Navegação inferior com abas de tarefas, horários, cursos e perfil.
-- Lista local de tarefas com criação simples, status de conclusão e dica de IA/fallback local.
-- Lista local de disponibilidade com repetição semanal.
-- Lista local de cursos com progresso visual.
-- Algoritmo inicial de cronograma em `SchedulerService`.
+- Navegação inferior com abas de tarefas, disciplinas, horários, cursos e perfil.
+- Disciplinas acadêmicas em estado compartilhado.
+- Tarefas vinculadas a disciplinas por `subjectId`.
+- Disponibilidade em estado compartilhado com repetição semanal.
+- Scheduler inicial usando tarefas e horários reais do estado local.
+- Cursos externos mantidos separados de disciplinas acadêmicas.
 - Experimento de dica de IA usando fallback local.
 
 ## Stack atual
 
 - Flutter e Dart.
 - Material 3.
-- `http` para chamadas HTTP.
+- `http` disponível para chamadas HTTP futuras.
 - `shared_preferences` disponível como dependência local.
 - `flutter_lints` para regras básicas de qualidade.
 
@@ -42,17 +43,21 @@ lib/
     availability_model.dart
     course_model.dart
     schedule_model.dart
+    subject_model.dart
     task_model.dart
   screens/
     availability/
     courses/
     profile/
+    subjects/
     tasks/
     main_navigation_screen.dart
   services/
     ai_service.dart
     scheduler_service.dart
     theme_controller.dart
+  state/
+    app_state.dart
   main.dart
 ```
 

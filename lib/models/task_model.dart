@@ -1,17 +1,17 @@
 class TaskModel {
   final String id;
   final String title;
-  final String subject;
+  final String subjectId;
   final String description;
   final int estimatedMinutes;
   final DateTime dueDate;
   final bool isCompleted;
-  String? aiTip;
+  final String? aiTip;
 
   TaskModel({
     required this.id,
     required this.title,
-    required this.subject,
+    required this.subjectId,
     this.description = '',
     required this.estimatedMinutes,
     required this.dueDate,
@@ -22,7 +22,7 @@ class TaskModel {
   TaskModel copyWith({
     String? id,
     String? title,
-    String? subject,
+    String? subjectId,
     String? description,
     int? estimatedMinutes,
     DateTime? dueDate,
@@ -32,7 +32,7 @@ class TaskModel {
     return TaskModel(
       id: id ?? this.id,
       title: title ?? this.title,
-      subject: subject ?? this.subject,
+      subjectId: subjectId ?? this.subjectId,
       description: description ?? this.description,
       estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
       dueDate: dueDate ?? this.dueDate,
