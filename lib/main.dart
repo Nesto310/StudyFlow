@@ -20,6 +20,12 @@ class _StudyFlowAppState extends State<StudyFlowApp> {
   final AppState _appState = AppState();
 
   @override
+  void dispose() {
+    _appState.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeModeNotifier,
