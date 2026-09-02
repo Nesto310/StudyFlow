@@ -1,6 +1,6 @@
 # Backend do StudyFlow
 
-API do StudyFlow construída com FastAPI, SQLAlchemy 2.x, Alembic e PostgreSQL. A Fase 2B implementa registro, autenticação JWT e CRUD de disciplinas, tarefas e disponibilidade, sempre isolados pelo usuário autenticado. O Flutter ainda não consome a API.
+API do StudyFlow construída com FastAPI, SQLAlchemy 2.x, Alembic e PostgreSQL. A Fase 2B implementa registro, autenticação JWT e CRUD de disciplinas, tarefas e disponibilidade, sempre isolados pelo usuário autenticado. A partir da Fase 2C, o Flutter consome esta API; a configuração de `API_BASE_URL` está no [README do projeto](../README.md).
 
 ## Requisitos
 

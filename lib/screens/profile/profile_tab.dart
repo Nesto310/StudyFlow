@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../services/theme_controller.dart';
+import '../../state/auth_state.dart';
 
 class ProfileTab extends StatelessWidget {
-  const ProfileTab({super.key});
+  const ProfileTab({super.key, required this.authState});
+  final AuthState authState;
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +26,19 @@ class ProfileTab extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Center(
+              Center(
                 child: Text(
-                  'Estudante',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  authState.currentUser?.email ?? '',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: authState.isBusy ? null : authState.logout,
+                icon: const Icon(Icons.logout),
+                label: const Text('Sair'),
               ),
               const SizedBox(height: 24),
               const Text(

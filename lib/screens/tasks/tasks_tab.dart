@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/task_model.dart';
 import '../../services/ai_service.dart';
+import '../../services/api_client.dart';
+import '../widgets/async_form_sheet.dart';
 import '../../state/app_state.dart';
 
 class TasksTab extends StatefulWidget {
@@ -17,11 +19,13 @@ class TasksTab extends StatefulWidget {
 
 class _TasksTabState extends State<TasksTab> {
   final Map<String, bool> _loadingAi = {};
+  final Set<String> _busy = {};
 
   void _getAiTip(TaskModel task) async {
     setState(() => _loadingAi[task.id] = true);
     final subjectName = widget.appState.findSubjectById(task.subjectId)?.name;
     final tip = await AiService.generateTaskTip(task, subjectName: subjectName);
+    if (!mounted) return;
     widget.appState.setTaskAiTip(task.id, tip);
 
     if (mounted) {
@@ -42,7 +46,8 @@ class _TasksTabState extends State<TasksTab> {
           right: 20,
           top: 20,
         ),
-        child: Column(
+        child: SingleChildScrollView(
+            child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -72,7 +77,7 @@ class _TasksTabState extends State<TasksTab> {
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -82,113 +87,149 @@ class _TasksTabState extends State<TasksTab> {
     if (subjects.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cadastre uma disciplina antes de criar tarefas.'),
-        ),
+            content: Text('Cadastre uma disciplina antes de criar tarefas.')),
       );
       return;
     }
-
-    final titleController = TextEditingController();
-    final descController = TextEditingController();
-    final durationController = TextEditingController(text: '60');
-    String selectedSubjectId = subjects.first.id;
-
-    showModalBottomSheet(
+    var title = '';
+    var description = '';
+    var duration = '60';
+    var subjectId = subjects.first.id;
+    DateTime? date;
+    TimeOfDay? time;
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (context) => AsyncFormSheet(
+        title: 'Nova Tarefa',
+        submitLabel: 'Adicionar Tarefa',
+        fields: (context, busy, refresh) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Nova Tarefa',
-              style: Theme.of(
-                ctx,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: titleController,
+            TextFormField(
+              enabled: !busy,
+              maxLength: 200,
               decoration: const InputDecoration(
-                labelText: 'Título da Tarefa',
-                border: OutlineInputBorder(),
-              ),
+                  labelText: 'Título da Tarefa', border: OutlineInputBorder()),
+              onChanged: (value) => title = value,
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Informe o título.'
+                  : null,
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              initialValue: selectedSubjectId,
+              initialValue: subjectId,
+              isExpanded: true,
               decoration: const InputDecoration(
-                labelText: 'Disciplina',
-                border: OutlineInputBorder(),
-              ),
+                  labelText: 'Disciplina', border: OutlineInputBorder()),
               items: subjects
-                  .map(
-                    (subject) => DropdownMenuItem(
-                      value: subject.id,
-                      child: Text(subject.name),
-                    ),
-                  )
+                  .map((subject) => DropdownMenuItem(
+                        value: subject.id,
+                        child:
+                            Text(subject.name, overflow: TextOverflow.ellipsis),
+                      ))
                   .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  selectedSubjectId = value;
-                }
-              },
+              onChanged: busy
+                  ? null
+                  : (value) {
+                      if (value != null) subjectId = value;
+                    },
             ),
             const SizedBox(height: 10),
-            TextField(
-              controller: descController,
+            TextFormField(
+              enabled: !busy,
               maxLines: 2,
               decoration: const InputDecoration(
-                labelText: 'Descrição detalhada',
-                border: OutlineInputBorder(),
-              ),
+                  labelText: 'Descrição detalhada',
+                  border: OutlineInputBorder()),
+              onChanged: (value) => description = value,
             ),
             const SizedBox(height: 10),
-            TextField(
-              controller: durationController,
+            TextFormField(
+              enabled: !busy,
+              initialValue: duration,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Tempo Estimado (min)',
-                border: OutlineInputBorder(),
-              ),
+                  labelText: 'Tempo Estimado (min)',
+                  border: OutlineInputBorder()),
+              onChanged: (value) => duration = value,
+              validator: (value) => (int.tryParse(value ?? '') ?? 0) <= 0
+                  ? 'Informe um número inteiro maior que zero.'
+                  : null,
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  if (titleController.text.trim().isEmpty) {
-                    return;
-                  }
-
-                  widget.appState.addTask(
-                    title: titleController.text,
-                    subjectId: selectedSubjectId,
-                    description: descController.text,
-                    estimatedMinutes:
-                        int.tryParse(durationController.text) ?? 60,
-                    dueDate: DateTime.now().add(const Duration(days: 3)),
-                  );
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Adicionar Tarefa'),
-              ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: busy
+                  ? null
+                  : () async {
+                      final now = DateTime.now();
+                      final selected = await showDatePicker(
+                          context: context,
+                          initialDate: date ?? now,
+                          firstDate: DateTime(now.year - 1),
+                          lastDate: DateTime(now.year + 10));
+                      if (selected != null) {
+                        date = selected;
+                        refresh();
+                      }
+                    },
+              icon: const Icon(Icons.calendar_today),
+              label: Text(date == null
+                  ? 'Data de entrega'
+                  : MaterialLocalizations.of(context).formatMediumDate(date!)),
+            ),
+            OutlinedButton.icon(
+              onPressed: busy
+                  ? null
+                  : () async {
+                      final selected = await showTimePicker(
+                          context: context,
+                          initialTime: time ?? TimeOfDay.now());
+                      if (selected != null) {
+                        time = selected;
+                        refresh();
+                      }
+                    },
+              icon: const Icon(Icons.schedule),
+              label: Text(
+                  time == null ? 'Horário de entrega' : time!.format(context)),
             ),
           ],
         ),
+        onSubmit: () async {
+          if (date == null || time == null) {
+            throw const ApiException(
+                'Selecione a data e o horário de entrega.');
+          }
+          await widget.appState.addTask(
+              title: title,
+              subjectId: subjectId,
+              description: description,
+              estimatedMinutes: int.parse(duration),
+              dueDate: DateTime(date!.year, date!.month, date!.day, time!.hour,
+                  time!.minute));
+        },
       ),
     );
+  }
+
+  Future<void> _changeTask(TaskModel task, {bool delete = false}) async {
+    if (_busy.contains(task.id)) return;
+    setState(() => _busy.add(task.id));
+    try {
+      if (delete) {
+        if (!await confirmDelete(context, 'Excluir tarefa?') || !mounted) {
+          return;
+        }
+        await widget.appState.deleteTask(task.id);
+      } else {
+        await widget.appState.toggleTaskCompletion(task.id);
+      }
+    } catch (error) {
+      if (mounted) showActionError(context, error);
+    } finally {
+      if (mounted) setState(() => _busy.remove(task.id));
+    }
   }
 
   @override
@@ -208,7 +249,7 @@ class _TasksTabState extends State<TasksTab> {
           body: tasks.isEmpty
               ? const Center(child: Text('Nenhuma tarefa cadastrada.'))
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     final task = tasks[index];
@@ -228,12 +269,15 @@ class _TasksTabState extends State<TasksTab> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Chip(
-                                  label: Text(subjectName),
+                                Flexible(
+                                    child: Chip(
+                                  label: Text(subjectName,
+                                      overflow: TextOverflow.ellipsis),
                                   backgroundColor: Theme.of(
                                     context,
                                   ).colorScheme.primaryContainer,
-                                ),
+                                )),
+                                const SizedBox(width: 8),
                                 Text(
                                   '${task.estimatedMinutes} min',
                                   style: Theme.of(context).textTheme.bodySmall,
@@ -256,9 +300,15 @@ class _TasksTabState extends State<TasksTab> {
                               ),
                             ],
                             const SizedBox(height: 12),
+                            Text(
+                                'Entrega: ${MaterialLocalizations.of(context).formatMediumDate(task.dueDate.toLocal())} '
+                                '${TimeOfDay.fromDateTime(task.dueDate.toLocal()).format(context)}'),
                             const Divider(),
                             // Opção DICA IA logo abaixo da tarefa
-                            Row(
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 OutlinedButton.icon(
                                   onPressed:
@@ -282,8 +332,17 @@ class _TasksTabState extends State<TasksTab> {
                                         : 'Dica IA',
                                   ),
                                 ),
-                                const Spacer(),
                                 IconButton(
+                                  tooltip: 'Excluir tarefa',
+                                  icon: const Icon(Icons.delete_outline),
+                                  onPressed: _busy.contains(task.id)
+                                      ? null
+                                      : () => _changeTask(task, delete: true),
+                                ),
+                                IconButton(
+                                  tooltip: task.isCompleted
+                                      ? 'Marcar como pendente'
+                                      : 'Concluir tarefa',
                                   icon: Icon(
                                     task.isCompleted
                                         ? Icons.check_circle
@@ -291,11 +350,9 @@ class _TasksTabState extends State<TasksTab> {
                                     color:
                                         task.isCompleted ? Colors.green : null,
                                   ),
-                                  onPressed: () {
-                                    widget.appState.toggleTaskCompletion(
-                                      task.id,
-                                    );
-                                  },
+                                  onPressed: _busy.contains(task.id)
+                                      ? null
+                                      : () => _changeTask(task),
                                 ),
                               ],
                             ),

@@ -8,4 +8,10 @@ class SubjectModel {
     required this.name,
     this.teacher = '',
   });
+
+  factory SubjectModel.fromJson(Map<String, dynamic> json) => SubjectModel(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        teacher: json['teacher'] as String? ?? '',
+      );
 }
