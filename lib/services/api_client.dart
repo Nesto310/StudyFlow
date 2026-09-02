@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 import '../config/api_config.dart';
 import '../models/availability_model.dart';
 import '../models/subject_model.dart';
+import '../models/study_plan_model.dart';
 import '../models/task_model.dart';
 import '../models/user_model.dart';
 
@@ -182,14 +184,38 @@ class ApiClient {
           'username': email.trim().toLowerCase(),
           'password': password,
         }),
-        (data) {
-          final token = data['access_token'] as String;
-          if (token.isEmpty || data['token_type'] != 'bearer') {
-            throw const FormatException('Invalid token response');
-          }
-          return token;
-        },
+        _readToken,
       );
+
+  static String _readToken(Map<String, dynamic> data) {
+    final token = data['access_token'] as String;
+    if (token.isEmpty || data['token_type'] != 'bearer') {
+      throw const FormatException('Invalid token response');
+    }
+    return token;
+  }
+
+  Future<String> startDemoSession() async {
+    if (!kDebugMode) {
+      throw const ApiException('Modo demonstração indisponível.');
+    }
+    return _object(_request('POST', '/dev/demo-session', authenticated: false),
+        _readToken);
+  }
+
+  Future<StudyPlan> generateStudyPlan({
+    int horizonDays = 14,
+    int? timezoneOffsetMinutes,
+    DateTime? startAt,
+  }) =>
+      _object(
+          _request('POST', '/planner/plan', json: {
+            'horizon_days': horizonDays,
+            'timezone_offset_minutes': timezoneOffsetMinutes ??
+                DateTime.now().timeZoneOffset.inMinutes,
+            if (startAt != null) 'start_at': startAt.toUtc().toIso8601String(),
+          }),
+          StudyPlan.fromJson);
 
   Future<UserModel> getCurrentUser() =>
       _object(_request('GET', '/users/me'), UserModel.fromJson);

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/availability_model.dart';
 import '../models/subject_model.dart';
+import '../models/study_plan_model.dart';
 import '../models/task_model.dart';
 import '../services/api_client.dart';
 
@@ -17,6 +18,40 @@ class AppState extends ChangeNotifier {
   bool isLoading = false;
   bool hasLoaded = false;
   String? loadError;
+  StudyPlan? studyPlan;
+  String? planError;
+  bool isGeneratingPlan = false;
+  int _planRevision = 0;
+
+  void _invalidatePlan() {
+    _planRevision++;
+    studyPlan = null;
+    planError = null;
+    isGeneratingPlan = false;
+  }
+
+  Future<void> generateStudyPlan() async {
+    if (isGeneratingPlan || _disposed) return;
+    final generation = _generation;
+    final revision = _planRevision;
+    bool isCurrent() => _isCurrent(generation) && revision == _planRevision;
+    isGeneratingPlan = true;
+    planError = null;
+    notifyListeners();
+    try {
+      final plan = await _api.generateStudyPlan();
+      if (isCurrent()) studyPlan = plan;
+    } on ApiException {
+      if (isCurrent()) {
+        planError = 'Não foi possível gerar o plano de estudos.';
+      }
+    } finally {
+      if (isCurrent()) {
+        isGeneratingPlan = false;
+        notifyListeners();
+      }
+    }
+  }
 
   List<SubjectModel> get subjects => List.unmodifiable(_subjects);
   List<TaskModel> get tasks => List.unmodifiable(_tasks);
@@ -24,6 +59,7 @@ class AppState extends ChangeNotifier {
 
   void clear() {
     _generation++;
+    _invalidatePlan();
     _subjects.clear();
     _tasks.clear();
     _availabilitySlots.clear();
@@ -56,6 +92,7 @@ class AppState extends ChangeNotifier {
         ..clear()
         ..addAll(result[2] as List<TimeSlot>);
       hasLoaded = true;
+      _invalidatePlan();
     } on ApiException catch (error) {
       if (_isCurrent(generation)) loadError = error.message;
     } finally {
@@ -74,6 +111,7 @@ class AppState extends ChangeNotifier {
     final result = await request();
     if (!_isCurrent(generation)) throw ApiClient.sessionExpired;
     apply(result);
+    _invalidatePlan();
     notifyListeners();
     return result;
   }

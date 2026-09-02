@@ -10,7 +10,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 class Settings(BaseSettings):
     app_name: str = "StudyFlow API"
-    app_env: str = "development"
+    app_env: str = "production"
     database_url: str
     jwt_secret_key: SecretStr
     jwt_algorithm: Literal["HS256"] = "HS256"

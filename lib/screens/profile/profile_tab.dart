@@ -34,6 +34,10 @@ class ProfileTab extends StatelessWidget {
                       fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
+              if (authState.isDemoSession) ...[
+                const SizedBox(height: 4),
+                const Center(child: Text('Modo demonstração')),
+              ],
               const SizedBox(height: 24),
               OutlinedButton.icon(
                 onPressed: authState.isBusy ? null : authState.logout,

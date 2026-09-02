@@ -78,7 +78,7 @@ class MemoryTokenStorage implements TokenStorage {
 }
 
 class ApiFixture {
-  ApiFixture({String? savedToken, bool seeded = true}) {
+  ApiFixture({String? savedToken, bool seeded = true, bool demoMode = false}) {
     for (final owner in ['a', 'b']) {
       rows[owner] = {
         'subjects': seeded ? [subjectJson(owner)] : [],
@@ -90,7 +90,11 @@ class ApiFixture {
     api = ApiClient(
         client: MockClient(_handle), baseUrl: 'http://localhost:8000/');
     app = AppState(apiClient: api);
-    auth = AuthState(apiClient: api, tokenStorage: storage, appState: app);
+    auth = AuthState(
+        apiClient: api,
+        tokenStorage: storage,
+        appState: app,
+        demoMode: demoMode);
   }
 
   late final ApiClient api;
@@ -107,6 +111,11 @@ class ApiFixture {
     final intercepted = await intercept?.call(request);
     if (intercepted != null) return intercepted;
     final path = request.url.path;
+    if (path.endsWith('/dev/demo-session')) {
+      return jsonResponse(
+          {'access_token': 'fictitious-demo-token-a', 'token_type': 'bearer'});
+    }
+    if (path.endsWith('/planner/plan')) return jsonResponse(planJson());
     if (path.endsWith('/auth/token')) {
       final form = Uri.splitQueryString(request.body);
       final owner = form['username']!.startsWith('b') ? 'b' : 'a';
@@ -156,3 +165,44 @@ class ApiFixture {
     api.close();
   }
 }
+
+Map<String, dynamic> planJson() => {
+      'generated_at': '2026-09-07T18:00:00Z',
+      'horizon_start': '2026-09-07T18:00:00Z',
+      'horizon_end': '2026-09-21T18:00:00Z',
+      'timezone_offset_minutes': -180,
+      'blocks': [
+        {
+          'task_id': 'task-a',
+          'subject_id': 'subject-a',
+          'subject_name': 'Algoritmos',
+          'task_title': 'Revisar árvores AVL',
+          'start_at': '2026-09-07T22:00:00Z',
+          'end_at': '2026-09-07T23:00:00Z',
+          'planned_minutes': 60,
+          'due_date': '2026-09-10T18:30:00Z',
+        }
+      ],
+      'tasks': [
+        {
+          'task_id': 'task-a',
+          'subject_id': 'subject-a',
+          'subject_name': 'Algoritmos',
+          'task_title': 'Revisar árvores AVL',
+          'due_date': '2026-09-10T18:30:00Z',
+          'estimated_minutes': 60,
+          'planned_minutes': 60,
+          'unscheduled_minutes': 0,
+          'risk': 'on_track',
+        }
+      ],
+      'summary': {
+        'total_pending_tasks': 1,
+        'total_planned_minutes': 60,
+        'total_unscheduled_minutes': 0,
+        'total_available_minutes': 240,
+        'on_track_tasks': 1,
+        'at_risk_tasks': 0,
+        'overdue_tasks': 0,
+      },
+    };

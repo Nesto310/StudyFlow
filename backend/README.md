@@ -138,6 +138,8 @@ Em `/docs`, execute `POST /api/v1/auth/register` para criar a conta. Depois cliq
 | Disciplinas | `POST`, `GET /api/v1/subjects`; `GET`, `PATCH`, `DELETE /api/v1/subjects/{subject_id}` |
 | Tarefas | `POST`, `GET /api/v1/tasks`; `GET`, `PATCH`, `DELETE /api/v1/tasks/{task_id}` |
 | Disponibilidade | `POST`, `GET /api/v1/availability`; `GET`, `PATCH`, `DELETE /api/v1/availability/{slot_id}` |
+| Planner autenticado | `POST /api/v1/planner/plan` (200) |
+| Sessão demo, somente development | `POST /api/v1/dev/demo-session` (200) |
 
 Criações retornam 201, consultas/atualizações 200 e exclusões 204 sem corpo. Ausência de autenticação ou token inválido/expirado retorna 401 com `WWW-Authenticate: Bearer`. Recurso inexistente ou de outro usuário retorna 404. Validações retornam 422; conflitos de integridade retornam 409 com rollback e sem SQL na resposta.
 
@@ -169,3 +171,34 @@ python -m pytest
 A suíte cobre registro/hash Argon2, login/dummy hash, assinatura/expiração/claims do JWT, CRUD, ownership entre duas contas, regras de exclusão, validação de PATCH, rollback e o contrato OAuth2/OpenAPI. A chave JWT dos testes é gerada em memória, sem usar a chave do `.env` local. Os testes da Fase 2A permanecem na suíte.
 
 Testes SQLite não substituem validação real do PostgreSQL, especialmente de bloqueios concorrentes. Com PostgreSQL disponível, execute `alembic upgrade head`, `alembic check` e o fluxo de autenticação/CRUD acima contra esse banco.
+
+## Planner V1
+
+Com `$headers` da autenticação normal, ou de uma sessão demo local:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "$api/api/v1/planner/plan" -Headers $headers -ContentType "application/json" -Body '{"horizon_days":14,"timezone_offset_minutes":-180}'
+```
+
+O corpo pode ser `{}`. `start_at` é opcional e exige timezone quando enviado; o padrão é agora UTC. `horizon_days` aceita 1..30 (padrão 14), e o offset aceita -840..840 minutos (padrão 0). Campos extras, incluindo ownership/listas/IDs, são rejeitados. O cálculo consulta apenas os dados do usuário autenticado e não persiste nem altera entidades.
+
+Earliest Deadline First ordena tarefas pendentes por prazo, criação e ID. Usa duração estimada, divide tarefas em blocos de até 90 minutos e deixa 10 minutos entre blocos na mesma janela contínua. Prazos futuros limitam a alocação: `on_track` significa completa, `at_risk` significa minutos faltantes. Tarefas vencidas em `start_at` permanecem `overdue` e são encaixadas quando possível.
+
+Horários semanais são locais ao offset fixo recebido. `repeat_next_week=false` usa a primeira ocorrência futura (incluindo a parte ainda disponível de hoje); `true` repete semanalmente até o horizonte. Janelas são recortadas, arredondadas para dentro à resolução de minuto e unidas quando sobrepostas/adjacentes. A API retorna timestamps UTC, blocos cronológicos, resumos por tarefa e totais. Capacidade disponível é bruta, antes dos intervalos. Não há conversão DST/IANA nesta fase.
+
+## Demonstração em desenvolvimento
+
+Configure explicitamente `APP_ENV=development` no `.env` privado e reinicie a API. Sem essa configuração o padrão é `production`: a rota demo não é registrada, retorna 404 e não aparece no OpenAPI. Nunca exponha a API demo à internet ou a dados de produção.
+
+```powershell
+$demo = Invoke-RestMethod -Method Post -Uri "$api/api/v1/dev/demo-session"
+$headers = @{ Authorization = "Bearer $($demo.access_token)" }
+```
+
+Não imprima `$demo` ou `$headers`. A rota não recebe email/senha. Retorna `TokenResponse` normal com `Cache-Control: no-store`. O usuário `demo@studyflow.example.com` usa domínio reservado aceito por `EmailStr`, sem senha conhecida ou privilégios especiais. Senha aleatória interna é armazenada somente como hash Argon2.
+
+Somente quando todas as coleções da conta estão vazias, o seed cria Algoritmos/Banco de Dados/Engenharia de Software, tarefas de 90/60/120 minutos com prazos em 2/4/6 dias e horários diários 19:00-21:00. Acesso repetido preserva edições e não duplica dados. A conta é compartilhada entre sessões demo do mesmo banco.
+
+O Flutter debug entra automaticamente nesse usuário; `DEMO_MODE=false` restaura o login normal. Release/profile nunca solicitam sessão demo, mesmo com a flag true. O token demo não é persistido. Comandos Flutter e a dívida de remoção estão no [README principal](../README.md) e em [TECHNICAL_DEBT.md](../docs/TECHNICAL_DEBT.md).
+
+Os testes da Fase 3 cobrem EDF, divisão, intervalos, prazos, riscos, timezone, recorrência, isolamento e ausência de escrita pelo Planner; também cobrem seed idempotente e ausência da rota demo fora de development.

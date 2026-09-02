@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../models/availability_model.dart';
-import '../../models/schedule_model.dart';
 import '../../services/api_client.dart';
-import '../../services/scheduler_service.dart';
 import '../../state/app_state.dart';
 import '../widgets/async_form_sheet.dart';
+import 'planner_preview.dart';
 
 class AvailabilityTab extends StatefulWidget {
   const AvailabilityTab({super.key, required this.appState});
@@ -16,7 +15,6 @@ class AvailabilityTab extends StatefulWidget {
 }
 
 class _AvailabilityTabState extends State<AvailabilityTab> {
-  List<ScheduleBlock> _generatedSchedule = [];
   final Set<String> _busy = {};
   static const _days = [
     'Segunda',
@@ -27,35 +25,6 @@ class _AvailabilityTabState extends State<AvailabilityTab> {
     'Sábado',
     'Domingo'
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    widget.appState.addListener(_invalidateSchedule);
-  }
-
-  @override
-  void dispose() {
-    widget.appState.removeListener(_invalidateSchedule);
-    super.dispose();
-  }
-
-  void _invalidateSchedule() {
-    if (mounted && _generatedSchedule.isNotEmpty) {
-      setState(() => _generatedSchedule = []);
-    }
-  }
-
-  void _runScheduler() {
-    setState(() {
-      _generatedSchedule = SchedulerService.generateOptimalSchedule(
-        slots: widget.appState.availabilitySlots,
-        tasks: widget.appState.tasks,
-        courses: [],
-        subjects: widget.appState.subjects,
-      );
-    });
-  }
 
   void _showAddSlot() {
     var day = 1;
@@ -169,71 +138,80 @@ class _AvailabilityTabState extends State<AvailabilityTab> {
         builder: (context, _) {
           final slots = widget.appState.availabilitySlots;
           return Scaffold(
-            appBar: AppBar(title: const Text('Horários Disponíveis'), actions: [
-              IconButton(
-                  tooltip: 'Organizar Cronograma',
-                  icon: const Icon(Icons.auto_graph),
-                  onPressed: slots.isEmpty ? null : _runScheduler),
-            ]),
+            appBar: AppBar(title: const Text('Horários Disponíveis')),
             floatingActionButton: FloatingActionButton.extended(
               onPressed: _showAddSlot,
               icon: const Icon(Icons.add),
               label: const Text('Novo Horário'),
             ),
-            body: slots.isEmpty
-                ? const Center(
-                    child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('Nenhum horário disponível cadastrado.',
-                            textAlign: TextAlign.center)))
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                    children: [
-                      ...slots.map((slot) => Card(
-                              child: Column(children: [
-                            ListTile(
-                              leading: CircleAvatar(
-                                  child: Text(_days[slot.dayOfWeek - 1]
-                                      .substring(0, 3))),
-                              title: Text(
-                                  '${_days[slot.dayOfWeek - 1]}: ${slot.startHour} às ${slot.endHour}'),
-                              subtitle: Text('${slot.durationMinutes} min'),
-                              trailing: IconButton(
-                                tooltip: 'Excluir horário',
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: _busy.contains(slot.id)
-                                    ? null
-                                    : () => _changeSlot(slot, delete: true),
-                              ),
-                            ),
-                            SwitchListTile(
-                              title: const Text('Repetir na próxima semana'),
-                              value: slot.repeatNextWeek,
-                              onChanged: _busy.contains(slot.id)
-                                  ? null
-                                  : (value) => _changeSlot(slot, repeat: value),
-                            ),
-                          ]))),
-                      if (_generatedSchedule.isNotEmpty) ...[
-                        const Divider(height: 32),
-                        Text('Cronograma Gerado pelo Algoritmo:',
-                            style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 8),
-                        ..._generatedSchedule.map((block) => Card(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer
-                                  .withValues(alpha: 0.3),
-                              child: ListTile(
-                                leading: const Icon(Icons.schedule),
-                                title: Text(block.itemTitle),
-                                subtitle: Text(
-                                    '${block.dayName} (${block.timeRange}) • ${block.category}'),
-                              ),
-                            )),
-                      ],
-                    ],
-                  ),
+            body: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+              children: [
+                FilledButton.icon(
+                  onPressed: widget.appState.isGeneratingPlan
+                      ? null
+                      : widget.appState.generateStudyPlan,
+                  icon: widget.appState.isGeneratingPlan
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.auto_graph),
+                  label: Text(widget.appState.isGeneratingPlan
+                      ? 'Gerando plano...'
+                      : 'Gerar plano de estudos'),
+                ),
+                if (widget.appState.planError != null) ...[
+                  const SizedBox(height: 12),
+                  Text(widget.appState.planError!,
+                      semanticsLabel: widget.appState.planError),
+                  Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                          onPressed: widget.appState.isGeneratingPlan
+                              ? null
+                              : widget.appState.generateStudyPlan,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Tentar novamente'))),
+                ],
+                if (widget.appState.studyPlan != null)
+                  PlannerPreview(plan: widget.appState.studyPlan!),
+                const Divider(height: 32),
+                Text('Disponibilidade',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                if (slots.isEmpty)
+                  const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Text('Nenhum horário disponível cadastrado.',
+                          textAlign: TextAlign.center)),
+                ...slots.map((slot) => Card(
+                        child: Column(children: [
+                      ListTile(
+                        leading: CircleAvatar(
+                            child: Text(
+                                _days[slot.dayOfWeek - 1].substring(0, 3))),
+                        title: Text(
+                            '${_days[slot.dayOfWeek - 1]}: ${slot.startHour} às ${slot.endHour}'),
+                        subtitle: Text('${slot.durationMinutes} min'),
+                        trailing: IconButton(
+                          tooltip: 'Excluir horário',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: _busy.contains(slot.id)
+                              ? null
+                              : () => _changeSlot(slot, delete: true),
+                        ),
+                      ),
+                      SwitchListTile(
+                        title: const Text('Repetir na próxima semana'),
+                        value: slot.repeatNextWeek,
+                        onChanged: _busy.contains(slot.id)
+                            ? null
+                            : (value) => _changeSlot(slot, repeat: value),
+                      ),
+                    ]))),
+              ],
+            ),
           );
         },
       );
